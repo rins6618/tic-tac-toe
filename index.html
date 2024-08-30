@@ -6,8 +6,34 @@
     <title>Tic-tac-toe</title>
     <script defer src="./game.js"></script>
     <link rel="stylesheet" href="style.css">
+
+    <script src="https://kit.fontawesome.com/d74066f640.js" crossorigin="anonymous"></script>
+
 </head>
 <body class="grid">
+    <nav class="flex" id="controls">
+        <strong>Controls</strong>
+        <button class="flex" id="start"><i class="fa-solid fa-plus"></i></button>
+        <button class="flex" id="reset"><i class="fa-solid fa-rotate-right"></i></button>
+    </nav>
+    <dialog class="flex" id="prompt">
+        <div class="flex header">
+            <h2>Player names</h2>
+            <button id="close" class="flex">X</button>
+            
+        </div>
+        <form action="#" class="flex">
+
+            <fieldset class="grid">
+                <label for="p1" id="p1l">Player 1</label>
+                <input type="text" id="p1"></input>
+                <label for="p2" id="p2l">Player 2</label>
+                <input type="text" id="p2"></input>
+                
+            </fieldset>
+            <button id="send" class="flex"> Start Game </button>
+        </form>
+    </dialog>
     <main class="flex" id="container">
         <h1 class="flex"></h1>
         <div class="grid" id="board"></div>

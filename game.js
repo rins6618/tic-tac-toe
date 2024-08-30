@@ -48,23 +48,32 @@ const gameObject = function() {
             _matrix[i][j] = id;
         }
 
-        return { getBoardState, setPosition };
+        const reset = () => {
+            for (let i = 0; i < _matrix.length; i++) {
+                for (let j = 0; j < _matrix[i].length; j++) {
+                    _matrix[i][j] = null;
+                }
+            }
+        }
+
+        return { getBoardState, setPosition, reset };
     }();
 
     let p1Name, p2Name;
     
     let player1, player2;
 
-    const createPlayers = function() {
-        const temp = [ prompt("Player 1 name:", "John Doe"), prompt("Player 2 name:", "Jane Doe")];
-        [p1Name, p2Name] = temp;
+    const createPlayers = function(arr) {
+        [p1Name, p2Name] = arr;
         player1 = createPlayer(p1Name, 0);
         player2 = createPlayer(p2Name, 1);
     }
 
     const getPlayers = () => [player1, player2];
 
-    return { getPlayers, gameBoard, createPlayers};
+    const playersDefined = () => !(typeof player1 !== "undefined" || typeof player2 !== "undefined")
+
+    return { getPlayers, gameBoard, createPlayers, playersDefined};
 }();
 
 
@@ -76,6 +85,10 @@ const gameController = function() {
     let gameWinner = null;
 
     const startGame = function () {
+        gameWinner = null;
+        gameObject.gameBoard.reset();
+        players.pop();
+        players.pop();
         players.push(...gameObject.getPlayers());
         activePlayer = players[0].getID();
     };
@@ -158,7 +171,13 @@ const gameController = function() {
 
     const getActivePlayer = () => players[activePlayer].getName();
 
-    return {startGame, playRound, gameCheck, getWinner, getActivePlayer};
+    const restartGame = () => {
+        gameObject.gameBoard.reset();
+        gameWinner = null;
+        activePlayer = players[0].getID();
+
+    }
+    return {startGame, playRound, gameCheck, getWinner, getActivePlayer, restartGame};
 }();
 
 const DOMHandler = function() {
@@ -166,8 +185,16 @@ const DOMHandler = function() {
     const boardElem = document.querySelector("#board");
     const statusElem = document.querySelector("#status");
     const activeElem = document.querySelector("#container>h1");
-
-    const createDOMButtons = function () {
+    const dialogElem = document.querySelector("dialog");
+    const formElem = document.querySelector("form");
+    const closeBtn = document.querySelector("#close");
+    const formBtn = document.querySelector("form>button");
+    
+    const newGameBtn = document.querySelector("#start");
+    const resetBtn = document.querySelector("#reset");
+    
+    // identifier to display intention. IIFE but not a factory;
+    const createDOMButtons = function () {  
 
         const flatBoardState = gameObject.gameBoard.getBoardState().flat();
         for (let idx in flatBoardState) {
@@ -189,18 +216,23 @@ const DOMHandler = function() {
     
     const updateContent = function() {
         activeElem.textContent = `${gameController.getActivePlayer()}'s turn`;
+        statusElem.textContent = "";
 
         const buttons = [...boardElem.children];
         const flatBoardState = gameObject.gameBoard.getBoardState().flat();
         for (let button of buttons) {
             const boardIdx = parseInt(button.dataset.boardIdx);
             const state = flatBoardState[boardIdx];
-            if (state === null) continue;
+            if (state === null) {
+                button.textContent = "";
+                continue;
+            } 
             else if (state === 0) button.textContent = "X";
             else if (state === 1) button.textContent = "O";
         }
 
         if (!gameController.gameCheck()) {
+            activeElem.textContent = `Game is finished`;
             const winner = gameController.getWinner()
             if (winner === null) {
                 statusElem.textContent = `It's a draw!`;
@@ -210,8 +242,39 @@ const DOMHandler = function() {
         }
     }
 
-    return {};
+    const closeDialog = () => dialogElem.close();
+    const openDialog = () =>  {
+        if(!dialogElem.open) dialogElem.showModal();
+    }
+    closeBtn.addEventListener("click", closeDialog);
+
+    const promptPlayers = function() {
+        const playerArray = [];
+        openDialog();
+
+        formBtn.removeEventListener()
+        formBtn.addEventListener("click", e => {
+            e.preventDefault();
+            plr1Input = formElem.querySelector("#p1");
+            plr2Input = formElem.querySelector("#p2");
+
+            playerArray.push(plr1Input.value, plr2Input.value);
+            plr1Input.value = "";
+            plr2Input.value = "";
+            closeDialog();
+            gameObject.createPlayers(playerArray);
+            gameController.startGame();
+            updateContent();
+        });
+    }
+
+    newGameBtn.addEventListener("click", e => promptPlayers());
+    resetBtn.addEventListener("click", () => {
+        gameController.restartGame();
+        updateContent();
+    })
+
+    return {promptPlayers};
 }();
 
-gameObject.createPlayers();
-gameController.startGame();
+DOMHandler.promptPlayers();
